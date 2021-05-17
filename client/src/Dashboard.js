@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import useAuth from './useAuth';
-import TrackSearchResult from './TrackSearchResult';
 import { Container, Form } from 'react-bootstrap';
 import SpotifyWebApi from 'spotify-web-api-node';
 import { getSmallestAlbumImage } from './utils';
+import useAuth from './useAuth';
+import TrackSearchResult from './TrackSearchResult';
+import Player from './Player';
 
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.REACT_APP_SPOTIFY_CLIENT_ID
@@ -13,8 +14,7 @@ function Dashboard({ code }) {
   const accessToken = useAuth(code);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-
-  console.log(searchResults);
+  const [playingTrack, setPlayingTrack] = useState();
 
   useEffect(() => {
     if (!accessToken) return;
@@ -47,6 +47,11 @@ function Dashboard({ code }) {
     return () => (cancelRequest = true);
   }, [search, accessToken]);
 
+  function chooseTrack(track) {
+    setPlayingTrack(track);
+    setSearch('');
+  }
+
   return (
     <Container className="d-flex flex-column py-2" style={{ height: "100vh" }}>
       <Form.Control
@@ -57,10 +62,14 @@ function Dashboard({ code }) {
       />
       <div className="flex-grow-1 my-2" style={{ overflowY: "auto" }}>
         {searchResults.map(track => (
-          <TrackSearchResult track={track} key={track.uri} />
+          <TrackSearchResult
+            track={track}
+            key={track.uri}
+            chooseTrack={chooseTrack}
+          />
         ))}
       </div>
-      <div>Bottom</div>
+      <div><Player accessToken={accessToken} trackUri={playingTrack?.uri} /></div>
     </Container>
   )
 };
