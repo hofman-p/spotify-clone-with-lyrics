@@ -27,7 +27,6 @@ function useAuth(code) {
     if (!refreshToken || !expiresIn) return;
     try {
       const interval = setInterval(async () => {
-        console.log('hello refresh');
         const res = await axios.post(`${process.env.REACT_APP_SERVER_URI}/refreshToken`, {
           refreshToken
         });
