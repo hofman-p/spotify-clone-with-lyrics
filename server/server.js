@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const SpotifyWebApi = require('spotify-web-api-node');
+const lyricsFinder = require('lyrics-finder');
 
 const app = express();
 app.use(cors());
-app.use(express.json())
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // https://github.com/thelinmichael/spotify-web-api-node Authorization -> login
 app.post('/login', async (req, res) => {
@@ -48,5 +50,17 @@ app.post('/refreshToken', async (req, res) => {
     res.sendStatus(e.statusCode);
   }
 });
+
+// https://github.com/alias-rahil/lyrics-finder
+app.get('/lyrics', async (req, res) => {
+  try {
+    const lyrics = await lyricsFinder(req.query.artist, req.query.track) ||
+      'No Lyrics Found';
+    res.json({ lyrics });
+  } catch (e) {
+    console.error(e);
+    res.sendStatus(e.statusCode);
+  }
+})
 
 app.listen(3001);
