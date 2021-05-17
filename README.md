@@ -4,8 +4,8 @@ Spotify clone with automatic lyrics, Spotify premium login (+ refresh token) usi
 ## Features
 * Spotify login (and auto refresh token)
 * Track listing by artist or name
-* Lyrics displayed for playing track
-* Basic Spotify bar is implemented
+* Lyrics displayed when playing track
+* Basic Spotify playback bar is implemented
 
 ## What you need first
 You need to have installed or own:
