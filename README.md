@@ -1,6 +1,7 @@
 # Spotify Clone with Lyrics
 
 A full-stack Spotify clone application built with React and Node.js that allows users to search for music, play tracks, and view lyrics in real-time.
+This project was actually built BEFORE lyrics were added to Spotify!
 
 ## ✨ Features
 
