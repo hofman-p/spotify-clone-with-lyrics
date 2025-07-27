@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Container, Form } from 'react-bootstrap';
 import axios from 'axios';
 import SpotifyWebApi from 'spotify-web-api-node';
@@ -8,7 +8,7 @@ import TrackSearchResult from './TrackSearchResult';
 import Player from './Player';
 
 const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.REACT_APP_SPOTIFY_CLIENT_ID
+  clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID
 });
 
 function Dashboard({ code }) {
@@ -53,7 +53,7 @@ function Dashboard({ code }) {
     if (!playingTrack) return;
     async function getLyrics() {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_SERVER_URI}/lyrics`, {
+        const res = await axios.get(`${import.meta.env.VITE_SERVER_URI || 'http://localhost:3001'}/lyrics`, {
           params: {
             track: playingTrack.title,
             artist: playingTrack.artist

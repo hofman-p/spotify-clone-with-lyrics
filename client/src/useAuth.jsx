@@ -7,17 +7,20 @@ function useAuth(code) {
   const [expiresIn, setExpiresIn] = useState();
 
   useEffect(() => {
+    if (!code) return;
+
     async function login() {
       try {
-        const res = await axios.post(`${process.env.REACT_APP_SERVER_URI}/login`, {
+        const res = await axios.post(`${import.meta.env.VITE_SERVER_URI || 'http://localhost:3001'}/login`, {
           code
         });
         setAccessToken(res.data.accessToken);
         setRefreshToken(res.data.refreshToken);
         setExpiresIn(res.data.expiresIn);
+        // Clear the URL parameters after successful login
         window.history.pushState({}, null, "/");
       } catch (e) {
-        window.location = '/';
+        console.error('Login failed:', e);
       }
     }
     login();
@@ -27,7 +30,7 @@ function useAuth(code) {
     if (!refreshToken || !expiresIn) return;
     try {
       const interval = setInterval(async () => {
-        const res = await axios.post(`${process.env.REACT_APP_SERVER_URI}/refreshToken`, {
+        const res = await axios.post(`${import.meta.env.VITE_SERVER_URI || 'http://localhost:3001'}/refreshToken`, {
           refreshToken
         });
         setAccessToken(res.data.accessToken);
@@ -40,7 +43,6 @@ function useAuth(code) {
   }, [refreshToken, expiresIn]);
 
   return accessToken;
-};
-
+}
 
 export default useAuth;

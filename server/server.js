@@ -1,8 +1,8 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const SpotifyWebApi = require('spotify-web-api-node');
-const lyricsFinder = require('lyrics-finder');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import SpotifyWebApi from 'spotify-web-api-node';
+import fetch from 'node-fetch';
 
 const app = express();
 app.use(cors());
@@ -13,20 +13,34 @@ app.use(express.urlencoded({ extended: true }));
 app.post('/login', async (req, res) => {
   try {
     const code = req.body.code;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is required' });
+    }
+
+    console.log('Attempting login with code:', code.substring(0, 10) + '...');
+    console.log('Using redirect URI:', process.env.SPOTIFY_REDIRECT_URI);
+    console.log('Using client ID:', process.env.SPOTIFY_CLIENT_ID);
+
     const spotifyApi = new SpotifyWebApi({
       redirectUri: process.env.SPOTIFY_REDIRECT_URI,
       clientId: process.env.SPOTIFY_CLIENT_ID,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     });
+
     const tokens = await spotifyApi.authorizationCodeGrant(code);
+    console.log('Login successful');
     res.json({
       accessToken: tokens.body.access_token,
       refreshToken: tokens.body.refresh_token,
-      expiresIn: tokens.body.expires_in
-    })
+      expiresIn: tokens.body.expires_in,
+    });
   } catch (e) {
-    console.error(e);
-    res.sendStatus(e.statusCode);
+    console.error('Login error:', e.message);
+    console.error('Error body:', e.body);
+    res.status(e.statusCode || 500).json({
+      error: 'Authentication failed. Please try again.',
+    });
   }
 });
 
@@ -38,12 +52,12 @@ app.post('/refreshToken', async (req, res) => {
       redirectUri: process.env.SPOTIFY_REDIRECT_URI,
       clientId: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      refreshToken
+      refreshToken,
     });
     const data = await spotifyApi.refreshAccessToken();
     res.json({
       accessToken: data.body.access_token,
-      expiresIn: data.body.expires_in
+      expiresIn: data.body.expires_in,
     });
   } catch (e) {
     console.error(e);
@@ -51,16 +65,38 @@ app.post('/refreshToken', async (req, res) => {
   }
 });
 
-// https://github.com/alias-rahil/lyrics-finder
+// Using LyricsOVH API - free and no API key required
 app.get('/lyrics', async (req, res) => {
   try {
-    const lyrics = await lyricsFinder(req.query.artist, req.query.track) ||
-      'No Lyrics Found';
-    res.json({ lyrics });
+    const { artist, track } = req.query;
+
+    if (!artist || !track) {
+      return res
+        .status(400)
+        .json({ error: 'Artist and track parameters are required' });
+    }
+
+    // Clean up artist and track names for better API results
+    const cleanArtist = encodeURIComponent(artist.trim());
+    const cleanTrack = encodeURIComponent(track.trim());
+
+    const response = await fetch(
+      `https://api.lyrics.ovh/v1/${cleanArtist}/${cleanTrack}`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return res.json({ lyrics: 'No Lyrics Found' });
+      }
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json({ lyrics: data.lyrics || 'No Lyrics Found' });
   } catch (e) {
-    console.error(e);
-    res.sendStatus(e.statusCode);
+    console.error('Lyrics API Error:', e);
+    res.json({ lyrics: 'No Lyrics Found' });
   }
-})
+});
 
 app.listen(3001);
